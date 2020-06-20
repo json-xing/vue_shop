@@ -14,18 +14,19 @@
         label-width="0px"
       >
         <!-- 用户名 -->
-        <el-form-item prop="uname" label>
+        <el-form-item prop="username" label>
+          <!-- 用户名 -->
           <el-input
             @blur="loginFormVerify"
-            v-model="loginForm.uname"
+            v-model="loginForm.username"
             prefix-icon="iconfont icon-user"
           ></el-input>
         </el-form-item>
         <!-- 密码 -->
-        <el-form-item prop="upwd">
+        <el-form-item prop="password">
           <el-input
             @blur="loginFormVerify"
-            v-model="loginForm.upwd"
+            v-model="loginForm.password"
             type="password"
           >
             <i slot="prefix" class="iconfont icon-password"></i>
@@ -33,7 +34,7 @@
         </el-form-item>
         <!-- 按钮 -->
         <el-form-item class="btns">
-          <el-button @click="login" type="primary" :disabled="loginBtn"
+          <el-button @click="login" type="primary" :disabled="loginBtnActive"
             >登录</el-button
           >
           <el-button type="info" @click="resetLoginForm">重置</el-button>
@@ -48,20 +49,20 @@ export default {
   data() {
     return {
       loginForm: {
-        uname: 'lee',
-        upwd: 123
+        username: '',
+        password: ''
       },
       loginFormRules: {
-        uname: [
+        username: [
           { required: true, message: '验证用户名长度', trigger: 'blur' },
           { min: 3, max: 10, message: '长度在 3 到 10 个字符', trigger: 'blur' }
         ],
-        upwd: [
+        password: [
           { required: true, message: '验证密码长度', trigger: 'blur' },
           { min: 6, max: 16, message: '长度在 6 到 16 个字符', trigger: 'blur' }
         ]
       },
-      loginBtn: true
+      loginBtnActive: true
     }
   },
   methods: {
@@ -73,16 +74,31 @@ export default {
     loginFormVerify() {
       this.$refs.loginFormRef.validate(valid => {
         if (valid) {
-          this.loginBtn = false
+          this.loginBtnActive = false
         } else {
-          this.loginBtn = true
+          this.loginBtnActive = true
         }
       })
     },
     // 登录请求
     login() {
-      const result = this.$http.post('login', this.loginForm)
-      console.log(result)
+      this.$refs.loginFormRef.validate(async valid => {
+        if (valid) {
+          // 对象解构
+          const { data: res } = await this.$http.post('login', this.loginForm)
+          // if (res.meta.status === 200) {
+          //   return console.log('登录成功')
+          // } else {
+          //   console.log('登陆失败')
+          // }
+          // 简化
+          if (res.meta.status !== 200) return this.$message.error('登陆失败')
+          this.$message.success('登陆成功')
+          // 登录成功之后 将token保存在sessionStorage
+          sessionStorage.setItem('token', res.data.token)
+          this.$router.push('/home')
+        }
+      })
     }
   }
 }
