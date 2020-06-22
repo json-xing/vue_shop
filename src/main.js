@@ -9,8 +9,27 @@ import './assets/fonts/iconfont.css'
 // 导入axios模块
 import Axios from 'axios'
 Axios.defaults.baseURL = 'http://127.0.0.1:9090/api/private/v1/'
-Vue.prototype.$http = Axios
 
+// 请求拦截器
+Axios.interceptors.request.use(
+  config => {
+    // 携带 token 令牌
+    if (config.url !== 'login' && window.sessionStorage.getItem('token')) {
+      config.headers.authorization = sessionStorage.getItem('token')
+    }
+    if (localStorage.getItem('token')) {
+      config.headers.authorization = localStorage.getItem('token')
+    }
+    return config
+  },
+  error => {
+    console.log('===发送请求拦截器报错===')
+    console.log(error)
+    console.log('===end===')
+    Promise.reject(error)
+  }
+)
+Vue.prototype.$http = Axios
 Vue.config.productionTip = false
 
 new Vue({
