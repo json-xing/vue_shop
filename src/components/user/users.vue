@@ -112,7 +112,6 @@ export default {
       const { data: res } = await this.$http.get('users', {
         params: this.queryInfo
       })
-      // console.log(res)
       if (res.meta.status !== 200) {
         return this.$message.error('用户列表获取失败')
       }
