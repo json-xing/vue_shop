@@ -66,6 +66,7 @@ export default {
     }
   },
   methods: {
+    // 重置登录表格
     resetLoginForm() {
       // console.log(this)
       this.$refs.loginFormRef.resetFields()
