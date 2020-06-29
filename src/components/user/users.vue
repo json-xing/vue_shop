@@ -38,11 +38,11 @@
         <el-table-column type="index"> </el-table-column>
         <el-table-column prop="username" label="姓名" width="90">
         </el-table-column>
-        <el-table-column prop="email" label="邮箱" width="120">
+        <el-table-column prop="email" label="邮箱" width="180">
         </el-table-column>
         <el-table-column prop="mobile" label="电话"></el-table-column>
         <el-table-column prop="role_name" label="角色"></el-table-column>
-        <el-table-column label="状态">
+        <el-table-column label="状态" width="100">
           <!-- 作用域插槽加入 开关 -->
           <template slot-scope="scope">
             <el-switch
@@ -52,35 +52,35 @@
             </el-switch>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="175">
-          <!-- 作用域插槽 => 父组件拿到子组件中的数据 -->
+        <el-table-column label="操作" width="190">
           <template slot-scope="scope">
-            <!-- 修改按钮 -->
             <el-button
+              @click="showEditDialog(scope.row.id)"
               type="primary"
               icon="el-icon-edit"
               size="mini"
-              @click="showEditDialog(scope.row.id)"
-            ></el-button>
-            <!-- 删除按钮 -->
+            >
+            </el-button>
             <el-button
+              @click="removeUserById(scope.row.id)"
               type="danger"
               icon="el-icon-delete"
               size="mini"
-              @click="removeUserById(scope.row.id)"
-            ></el-button>
+            >
+            </el-button>
             <el-tooltip
-              :enterable="false"
               effect="dark"
               content="分配角色"
-              placement="top-start"
+              placement="top"
+              :enterable="false"
             >
-              <!-- 设置按钮 -->
               <el-button
+                @click="setRole(scope.row)"
                 type="warning"
                 icon="el-icon-setting"
                 size="mini"
-              ></el-button>
+              >
+              </el-button>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -155,6 +155,34 @@
         >
       </div>
     </el-dialog>
+    <!-- 分配角色对话框 -->
+    <el-dialog
+      title="分配角色"
+      :visible.sync="setRoleDialogVisible"
+      width="50%"
+      @close="setRoleDialogClose"
+    >
+      <div>
+        <p>当前的用户:{{ this.userInfo.username }}</p>
+        <p>当前的角色:{{ this.userInfo.role_name }}</p>
+        <p>
+          分配新角色:
+          <el-select v-model="selectRoleId" placeholder="请选择">
+            <el-option
+              v-for="item in roleList"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id"
+            >
+            </el-option>
+          </el-select>
+        </p>
+      </div>
+      <span slot="footer">
+        <el-button @click="setRoleDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveRoleInfo">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -183,7 +211,8 @@ export default {
       queryInfo: { query: '', pagenum: 1, pagesize: 2 },
       userList: [],
       total: 0,
-
+      // 控制分配角色对话框显示
+      setRoleDialogVisible: false,
       // 控制添加用户对话框显示
       addDialogVisible: false,
       // 控制修改用户信息对话框显示
@@ -191,9 +220,8 @@ export default {
 
       // 添加用户数据
       addForm: { username: '', region: '', email: '', mobile: '' },
-      // 修改用户数据
+      // 要修改的用户数据
       editForm: {},
-
       // 用户名验证规则对象
       addFormRules: {
         username: [
@@ -223,13 +251,50 @@ export default {
           { required: true, message: '请输入手机号码', trigger: 'blur' },
           { validator: checkMobile, trigger: 'blur' }
         ]
-      }
+      },
+      // 当前用户(需要被分配角色的用户)信息
+      userInfo: {},
+      // 角色列表
+      roleList: [],
+      selectRoleId: ''
     }
   },
   created() {
     this.getUserList()
   },
   methods: {
+    // 提交角色分配
+    async saveRoleInfo() {
+      // console.log(this.selectRoleId, this.userInfo)
+      const { data: res } = await this.$http.put(
+        `users/${this.userInfo.id}/role`,
+        {
+          rid: this.selectRoleId
+        }
+      )
+      if (res.meta.status !== 200) {
+        return this.$message.error('角色更新失败,请重试!')
+      }
+      this.$message.success('角色更新成功!')
+      this.getUserList()
+      console.log(res)
+      this.setRoleDialogVisible = false
+    },
+    // 监听分配角色对话框关闭重置对话框
+    setRoleDialogClose() {
+      // 清空选中角色的Id,重置选项
+      this.selectRoleId = ''
+    },
+    // 点击按钮打开分配角色对话框
+    async setRole(userInfo) {
+      // 通过作用插槽拿到的用户信息
+      this.userInfo = userInfo
+      // 获取所有角色列表
+      const { data: res } = await this.$http.get('roles')
+      this.roleList = res.data
+      // 打开对话框
+      this.setRoleDialogVisible = true
+    },
     // 删除用户  async  await ??????????
     async removeUserById(id) {
       // 弹框确认删除
@@ -248,6 +313,9 @@ export default {
         return this.$message.error('删除失败请重试!')
       }
       this.$message.success('删除成功')
+      // 暂时解决本页删除完后为空,=>删除,默认跳转到第一页
+      this.queryInfo.pagenum = 1
+      // 刷新列表
       this.getUserList()
     },
     // 发起修改用户信息请求
@@ -287,10 +355,15 @@ export default {
           return this.$message.error('添加失败,请重试!')
         }
         this.$message.success('添加成功!')
+        // 关闭对话框
+        this.addDialogVisible = false
+        // 刷新用户列表
+        this.getUserList()
       })
     },
-    // 监听对话框关闭事件(重置表单)
+    // 监听对话框关闭事件
     addDialogClose() {
+      // 重置表单
       this.$refs.addFormRef.resetFields()
     },
     // 修改状态

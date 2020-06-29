@@ -6,15 +6,16 @@ body,
   margin: 0px;
   padding: 0px;
 }
-/* 修改组件默认样式 */
+/* 修改面包屑组件默认样式 */
 .el-breadcrumb {
   margin-bottom: 10px;
   font-size: 12px;
 }
+/* card全局样式 */
 .el-card {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15) !important;
 }
-
+/* table全局样式 */
 .el-table {
   margin-top: 10px;
   font-size: 12px;
