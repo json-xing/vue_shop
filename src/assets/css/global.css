@@ -20,3 +20,16 @@ body,
   margin-top: 10px;
   font-size: 12px;
 }
+/* Cate.vue */
+/* 级联选择器样式 */
+.el-cascader {
+  width: 100%;
+}
+/* 级联选择器选项菜单 */
+.el-cascader-menu {
+  height: 300px;
+}
+/*  属性表格 */
+.tree-table {
+  margin-top: 10px;
+}
